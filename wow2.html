@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<title>তড়িৎ একাডেমিক কেয়ার</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body {font-family: 'Segoe UI', sans-serif; background:#f1f8e9; margin:0}
+header {background:#2e7d32;color:#fff;padding:20px;text-align:center}
+section {max-width:1100px;margin:20px auto;background:#fff;padding:20px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,.1)}
+h2 {color:#1b5e20;border-bottom:2px solid #c8e6c9;padding-bottom:5px}
+label {display:block;margin-top:10px;font-weight:bold}
+input, select {width:100%;padding:8px;margin-top:5px;border-radius:6px;border:1px solid #ccc}
+button {margin-top:15px;padding:10px 18px;background:#388e3c;color:#fff;border:none;border-radius:6px;cursor:pointer}
+button:hover {background:#1b5e20}
+table {width:100%;border-collapse:collapse;margin-top:15px}
+th, td {border:1px solid #ccc;padding:8px;text-align:center}
+footer {text-align:center;padding:15px;background:#1b5e20;color:#fff;margin-top:30px}
+#charts {display:flex; gap:30px; flex-wrap:wrap; margin-top:20px}
+canvas {background:#fff; border-radius:10px; padding:10px; box-shadow:0 2px 6px rgba(0,0,0,0.1)}
+.modal {display:none;position:fixed;z-index:999;left:0;top:0;width:100%;height:100%;overflow:auto;background:rgba(0,0,0,0.5);}
+.modal-content {background:#fff;margin:10% auto;padding:20px;border-radius:10px;width:90%;max-width:600px;position:relative;}
+.close {position:absolute;top:10px;right:15px;font-size:24px;font-weight:bold;color:#333;cursor:pointer;}
+.attendance-list {max-height:300px;overflow-y:auto;margin-top:10px;border:1px solid #ccc;padding:10px;border-radius:6px;}
+.attendance-list div {display:flex;justify-content:space-between;padding:5px 0;}
+.attendance-list div:nth-child(odd){background:#f9f9f9;}
+.attendance-list button {padding:3px 6px;font-size:12px;}
+.payment-btn {cursor:pointer; font-size:18px; border:none; background:none;}
+.payment-btn:hover{color:#1b5e20;}
+/* Responsive */
+@media(max-width:768px){
+  table, #charts {overflow-x:auto; display:block;}
+  th, td {padding:6px;}
+  button {padding:8px 12px;}
+}
+</style>
+</head>
+<body>
+
+<header>
+<h1>তড়িৎ একাডেমিক কেয়ার</h1>
+<p>পরিচালনায়: সামসুর রহমান সামু</p>
+<p>ফোন: 01879453612</p>
+</header>
+
+<section>
+<h2>শিক্ষার্থী রেজিস্ট্রেশন</h2>
+<label>নাম</label><input id="name">
+<label>রোল</label><input id="roll">
+<label>বাবা/মায়ের ফোন</label><input id="parent">
+<label>হোয়াটস্যাপ</label><input id="whatsapp">
+<label>ব্যাচ</label>
+<select id="batch">
+<option value="A">Batch A (শনি-সোম-বুধ | ৫–৬)</option>
+<option value="B">Batch B (রবি-মঙ্গল-বৃহস্পতি | ১১–১২)</option>
+</select>
+<button onclick="addStudent()">এন্ট্রি করুন</button>
+</section>
+
+<section>
+<h2>এটেন্ডেন্স ও পেমেন্ট</h2>
+<label>তারিখ</label><input type="date" id="date">
+
+<div style="margin-top:15px;">
+  <button onclick="filterBatch('all')">সব</button>
+  <button onclick="filterBatch('A')">শনি-সোম-বুধ</button>
+  <button onclick="filterBatch('B')">রবি-মঙ্গল-বৃহস্পতি</button>
+</div>
+
+<label>স্টুডেন্ট সার্চ</label>
+<input type="text" id="searchStudent" placeholder="নাম লিখুন" oninput="searchStudent()">
+
+<table>
+<thead>
+<tr>
+<th>নাম</th>
+<th>রোল</th>
+<th>ব্যাচ</th>
+<th>ক্লাস <button onclick="refreshMonth()">🔄</button></th>
+<th>উপস্থিত <button onclick="refreshMonth()">🔄</button></th>
+<th>পেমেন্ট <button onclick="refreshMonth()">🔄</button></th>
+<th>ডিলিট</th>
+</tr>
+</thead>
+<tbody id="table"></tbody>
+</table>
+
+<button onclick="monthlyReport()">মাস শেষ রিপোর্ট দেখুন</button>
+
+<label>চলমান চার্ট দেখার জন্য ব্যাচ সিলেক্ট করুন:</label>
+<select id="chartBatch" onchange="updateChart()">
+<option value="A">Batch A</option>
+<option value="B">Batch B</option>
+</select>
+
+<div id="charts">
+<canvas id="chartA" width="400" height="200"></canvas>
+<canvas id="chartB" width="400" height="200"></canvas>
+</div>
+</section>
+
+<section>
+<h2>চলে যাওয়া শিক্ষার্থীরা</h2>
+<table>
+<thead>
+<tr><th>নাম</th><th>রোল</th><th>ব্যাচ</th><th>হোয়াটস্যাপ</th><th>যোগাযোগ</th><th>ডিলিট</th></tr>
+</thead>
+<tbody id="leftTable"></tbody>
+</table>
+</section>
+
+<footer>
+<p>© তড়িৎ একাডেমিক কেয়ার</p>
+</footer>
+
+<!-- Attendance Modal -->
+<div id="attendanceModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeModal()">&times;</span>
+    <h3 id="modalStudentName"></h3>
+    <div class="attendance-list" id="attendanceList"></div>
+  </div>
+</div>
+
+<!-- Payment Modal -->
+<div id="paymentModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closePaymentModal()">&times;</span>
+    <h3 id="paymentStudentName"></h3>
+    <p>এই স্টুডেন্ট কি পেমেন্ট কম্পলিট করেছে?</p>
+    <button onclick="confirmPayment(true)">হ্যা</button>
+    <button onclick="confirmPayment(false)">না</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script>
+const TEACHER_WA = '8801879453612';
+let students = JSON.parse(localStorage.getItem('students')) || [];
+let leftStudents = JSON.parse(localStorage.getItem('leftStudents')) || [];
+let currentFilter = 'all';
+let paymentTargetIndex = null;
+
+// Save
+function save(){
+  localStorage.setItem('students', JSON.stringify(students));
+  localStorage.setItem('leftStudents', JSON.stringify(leftStudents));
+}
+
+// Add student
+function addStudent(){
+  let name = document.getElementById('name').value;
+  let roll = document.getElementById('roll').value;
+  let parent = document.getElementById('parent').value;
+  let whatsapp = document.getElementById('whatsapp').value;
+  let batch = document.getElementById('batch').value;
+  if(!name || !roll){ alert('নাম ও রোল দিন'); return; }
+  let student = {name, roll, parent, whatsapp, batch, classes:0, paid:false, attendance:[]};
+  students.push(student); save(); render();
+  let msg = 'নতুন শিক্ষার্থী যুক্ত হয়েছে\nনাম: '+name+'\nরোল: '+roll+'\nব্যাচ: '+batch;
+  window.open('https://wa.me/'+TEACHER_WA+'?text='+encodeURIComponent(msg), '_blank');
+  document.getElementById('name').value=''; document.getElementById('roll').value=''; document.getElementById('parent').value=''; document.getElementById('whatsapp').value='';
+  updateChart();
+}
+
+// Render tables
+function render(){
+  let table = document.getElementById('table');
+  let leftTable = document.getElementById('leftTable');
+  table.innerHTML='';
+  for(let i=0;i<students.length;i++){
+    let s = students[i];
+    if(currentFilter !== 'all' && s.batch !== currentFilter) continue;
+    let payBtn = `<button class="payment-btn" onclick="openPaymentModal(${i})">${s.paid?'✔':'✖'}</button>`;
+    table.innerHTML += `<tr>
+      <td onclick="openModal(${i})" style="cursor:pointer">${s.name}</td>
+      <td>${s.roll}</td>
+      <td>${s.batch}</td>
+      <td>${s.classes}/12</td>
+      <td><button onclick="markPresent(${i})">✔</button></td>
+      <td>${payBtn}</td>
+      <td><button onclick="removeStudent(${i})">🗑</button></td>
+    </tr>`;
+  }
+  leftTable.innerHTML='';
+  for(let j=0;j<leftStudents.length;j++){
+    let ls = leftStudents[j];
+    leftTable.innerHTML+='<tr><td>'+ls.name+'</td><td>'+ls.roll+'</td><td>'+ls.batch+'</td><td>'+ls.whatsapp+'</td><td><a target="_blank" href="https://wa.me/'+ls.whatsapp+'">WhatsApp</a></td><td><button onclick="deleteLeftStudent('+j+')">🗑</button></td></tr>';
+  }
+  updateChart();
+}
+
+// Attendance
+function markPresent(i){
+  let date = document.getElementById('date').value;
+  if(!date){ alert('তারিখ দিন'); return; }
+  if(!students[i].attendance.find(a=>a.date===date)){
+    students[i].attendance.push({date, present:true});
+  } else {
+    students[i].attendance.find(a=>a.date===date).present = true;
+  }
+  students[i].classes = students[i].attendance.filter(x=>x.present).length;
+  save(); render();
+}
+
+// Remove / delete
+function removeStudent(i){
+  if(!confirm('ডিলিট করতে চান?')) return;
+  leftStudents.push(students[i]);
+  students.splice(i,1);
+  save(); render();
+}
+function deleteLeftStudent(i){
+  if(!confirm('আপনি কি নিশ্চিতভাবে এই শিক্ষার্থীর ডাটা মুছে ফেলতে চান?')) return;
+  leftStudents.splice(i,1);
+  save(); render();
+}
+
+// Refresh month
+function refreshMonth(){
+  if(!confirm('নিশ্চিত? নতুন মাস শুরু করতে সব ক্লাস, উপস্থিতি ও পেমেন্ট রিসেট হবে।')) return;
+  students.forEach(s=>{
+    s.classes = 0;
+    s.paid = false;
+    s.attendance = [];
+  });
+  save(); render(); updateChart();
+}
+
+// Monthly report
+async function monthlyReport(){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.setFontSize(16);
+  doc.text('মাসিক রিপোর্ট - তড়িৎ একাডেমিক কেয়ার', 10, 15);
+  doc.setFontSize(12);
+  let y = 25;
+  doc.text('নাম | রোল | ব্যাচ | ক্লাস | পেমেন্ট', 10, y);
+  y+=5;
+  students.forEach(s=>{
+    let text = `${s.name} | ${s.roll} | ${s.batch} | ${s.classes} | ${s.paid?'হ্যা':'না'}`;
+    doc.text(text, 10, y);
+    y+=7;
+  });
+  doc.save('monthly_report.pdf');
+}
+
+// Chart.js
+var ctxA = document.getElementById('chartA').getContext('2d');
+var ctxB = document.getElementById('chartB').getContext('2d');
+var chartA = new Chart(ctxA,{type:'bar',data:{labels:[],datasets:[{label:'Batch A Classes',data:[],backgroundColor:'rgba(75, 192, 192, 0.6)'}]},options:{responsive:true}});
+var chartB = new Chart(ctxB,{type:'bar',data:{labels:[],datasets:[{label:'Batch B Classes',data:[],backgroundColor:'rgba(153, 102, 255, 0.6)'}]},options:{responsive:true}});
+
+function updateChart(){
+  let batchSel = document.getElementById('chartBatch').value;
+  let labelsA=[], dataA=[], labelsB=[], dataB=[];
+  students.forEach(s=>{
+    if(s.batch==='A'){labelsA.push(s.name); dataA.push(s.classes);} 
+    else{labelsB.push(s.name); dataB.push(s.classes);}
+  });
+  chartA.data.labels=labelsA; chartA.data.datasets[0].data=dataA; chartA.update();
+  chartB.data.labels=labelsB; chartB.data.datasets[0].data=dataB; chartB.update();
+  document.getElementById('chartA').style.display = batchSel==='A'?'block':'none';
+  document.getElementById('chartB').style.display = batchSel==='B'?'block':'none';
+}
+
+// Student search
+function searchStudent(){
+  let query = document.getElementById('searchStudent').value.toLowerCase();
+  if(!query) return;
+  let student = students.find(s=>s.name.toLowerCase().includes(query));
+  if(student) openModal(students.indexOf(student));
+}
+
+// Attendance modal
+function openModal(index){
+  let student = students[index];
+  document.getElementById('attendanceModal').style.display='block';
+  document.getElementById('modalStudentName').innerText = student.name+' এর এটেন্ডেন্স';
+  let list = document.getElementById('attendanceList');
+  list.innerHTML='';
+
+  if(student.classes===0){
+    list.innerHTML='<p>এই মাসে এখনো ক্লাস শুরু হয়নি।</p>';
+    return;
+  }
+
+  student.attendance.forEach((a,index)=>{
+    let div = document.createElement('div');
+    div.innerHTML = `<span>${a.date}</span><span>${a.present ? '✔ উপস্থিত':'✖ অনুপস্থিত'}</span>`;
+    let btn = document.createElement('button');
+    btn.innerText = a.present ? 'X' : '✔';
+    btn.onclick = ()=>{
+      student.attendance[index].present = !student.attendance[index].present;
+      student.classes = student.attendance.filter(x=>x.present).length;
+      save(); render(); openModal(index);
+    };
+    div.appendChild(btn);
+    list.appendChild(div);
+  });
+}
+function closeModal(){document.getElementById('attendanceModal').style.display='none';}
+
+// Payment modal
+function openPaymentModal(index){
+  paymentTargetIndex = index;
+  document.getElementById('paymentStudentName').innerText = students[index].name;
+  document.getElementById('paymentModal').style.display='block';
+}
+function closePaymentModal(){document.getElementById('paymentModal').style.display='none';}
+function confirmPayment(isPaid){
+  students[paymentTargetIndex].paid = isPaid;
+  save(); render(); closePaymentModal();
+}
+
+render();
+updateChart();
+</script>
+</body>
+</html>
