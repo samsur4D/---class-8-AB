@@ -177,7 +177,7 @@ function render(){
   for(let i=0;i<students.length;i++){
     let s = students[i];
     if(currentFilter !== 'all' && s.batch !== currentFilter) continue;
-    let payBtn = `<button class="payment-btn" onclick="openPaymentModal(${i})">${s.paid?'✔':'✖'}</button>`;
+    let payBtn = `<button class="payment-btn" onclick="openPaymentModal(${i})">${s.paid?'✅☑️':'❌‼️❌'}</button>`;
     table.innerHTML += `<tr>
       <td onclick="openModal(${i})" style="cursor:pointer">${s.name}</td>
       <td>${s.roll}</td>
@@ -332,7 +332,8 @@ function openModal(index){
     let div = document.createElement('div');
     div.innerHTML = `<span>${a.date}</span><span>${a.present ? '✔ উপস্থিত':'✖ অনুপস্থিত'}</span>`;
     let btn = document.createElement('button');
-    btn.innerText = a.present ? 'X' : '✔';
+    //  ✖️❌‼️ ✅☑️✔️
+    btn.innerText = a.present ? '❌‼️❌' : '✅☑️';
     btn.onclick = ()=>{
       student.attendance[index].present = !student.attendance[index].present;
       student.classes = student.attendance.filter(x=>x.present).length;
