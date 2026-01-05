@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <title>তড়িৎ একাডেমিক কেয়ার</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Add this in your <head> -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
 <style>
 body {font-family: 'Segoe UI', sans-serif; background:#f1f8e9; margin:0}
 header {background:#2e7d32;color:#fff;padding:20px;text-align:center}
@@ -39,7 +43,7 @@ canvas {background:#fff; border-radius:10px; padding:10px; box-shadow:0 2px 6px 
 
 <header>
 <h1>তড়িৎ একাডেমিক কেয়ার</h1>
-<p>পরিচালনায়: সামসুর রহমান সামু</p>
+<p> সামসুর রহমান সামু স্যার </p>
 <p>ফোন: 01879453612</p>
 </header>
 
@@ -51,10 +55,16 @@ canvas {background:#fff; border-radius:10px; padding:10px; box-shadow:0 2px 6px 
 <label>হোয়াটস্যাপ</label><input id="whatsapp">
 <label>ব্যাচ</label>
 <select id="batch">
-<option value="A">Batch A (শনি-সোম-বুধ | ৫–৬)</option>
-<option value="B">Batch B (রবি-মঙ্গল-বৃহস্পতি | ১১–১২)</option>
+<option value="A">Batch A (অষ্টম শ্রেনি শনি-সোম-বুধ | ৫–৬)</option>
+<option value="B">Batch B (অষ্টম শ্রেনি রবি-মঙ্গল-বৃহস্পতি | ১১–১২)</option>
+<option value="C">Batch C (নবম শ্রেনি শনি-সোম-বুধ )</option>
+<option value="D">Batch D (নবম শ্রেনি রবি-মঙ্গল-বৃহস্পতি )</option>
+<option value="E">Batch E (ষষ্ঠ শ্রেনি শনি-সোম-বুধ )</option>
+<option value="F">Batch F (ষষ্ঠ শ্রেনি রবি-মঙ্গল-বৃহস্পতি )</option>
+<option value="G">Batch G (সপ্তম শ্রেনি শনি-সোম-বুধ )</option>
+<option value="H">Batch H (সপ্তম শ্রেনি রবি-মঙ্গল-বৃহস্পতি )</option>
 </select>
-<button onclick="addStudent()">এন্ট্রি করুন</button>
+<button onclick="addStudent(batch)">এন্ট্রি করুন</button>
 </section>
 
 <section>
@@ -63,11 +73,17 @@ canvas {background:#fff; border-radius:10px; padding:10px; box-shadow:0 2px 6px 
 
 <div style="margin-top:15px;">
   <button onclick="filterBatch('all')">সব</button>
-  <button onclick="filterBatch('A')">শনি-সোম-বুধ</button>
-  <button onclick="filterBatch('B')">রবি-মঙ্গল-বৃহস্পতি</button>
+  <button onclick="filterBatch('A')"> অষ্টম শ্রেনি / শনি-সোম-বুধ A</button>
+  <button onclick="filterBatch('B')">অষ্টম শ্রেনি / রবি-মঙ্গল-বৃহস্পতি B</button>
+  <button onclick="filterBatch('C')">নবম শ্রেনি / শনি-সোম-বুধ C</button>
+  <button onclick="filterBatch('D')">নবম শ্রেনি / রবি-মঙ্গল-বৃহস্পতি D</button>
+  <button onclick="filterBatch('E')">ষষ্ঠ শ্রেনি / শনি-সোম-বুধ E</button>
+  <button onclick="filterBatch('F')">ষষ্ঠ শ্রেনি / রবি-মঙ্গল-বৃহস্পতি F</button>
+  <button onclick="filterBatch('G')">সপ্তম শ্রেনি / শনি-সোম-বুধ G</button>
+  <button onclick="filterBatch('H')">সপ্তম শ্রেনি / রবি-মঙ্গল-বৃহস্পতি H</button>
 </div>
 
-<label>স্টুডেন্ট সার্চ</label>
+<label>শিক্ষার্থী সার্চ</label>
 <input type="text" id="searchStudent" placeholder="নাম লিখুন" oninput="searchStudent()">
 
 <table>
@@ -140,7 +156,7 @@ canvas {background:#fff; border-radius:10px; padding:10px; box-shadow:0 2px 6px 
 const TEACHER_WA = '8801879453612';
 let students = JSON.parse(localStorage.getItem('students')) || [];
 let leftStudents = JSON.parse(localStorage.getItem('leftStudents')) || [];
-let currentFilter = 'all';
+// let currentFilter = 'all';
 let paymentTargetIndex = null;
 
 // Save
@@ -165,6 +181,13 @@ function addStudent(){
   updateChart();
 }
 
+let currentFilter = 'all'; 
+
+function filterBatch(batch){
+    currentFilter = batch;
+    render(); 
+}
+
 // Render tables
 function render(){
   let table = document.getElementById('table');
@@ -173,7 +196,7 @@ function render(){
   for(let i=0;i<students.length;i++){
     let s = students[i];
     if(currentFilter !== 'all' && s.batch !== currentFilter) continue;
-    let payBtn = `<button class="payment-btn" onclick="openPaymentModal(${i})">${s.paid?'✔':'✖'}</button>`;
+    let payBtn = `<button class="payment-btn" onclick="openPaymentModal(${i})">${s.paid?' ✅':'✖️'}</button>`;
     table.innerHTML += `<tr>
       <td onclick="openModal(${i})" style="cursor:pointer">${s.name}</td>
       <td>${s.roll}</td>
@@ -228,7 +251,43 @@ function refreshMonth(){
   });
   save(); render(); updateChart();
 }
+// ---------------------------------------------------------------------
 
+async function monthlyReport() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  doc.setFont("helvetica", "normal"); // works for Bengali in most browsers
+  doc.setFontSize(16);
+  doc.text('মাসিক রিপোর্ট - তড়িৎ একাডেমিক কেয়ার', 10, 15);
+
+  // Table headers
+  const headers = [['নাম', 'রোল', 'ব্যাচ', 'ক্লাস', 'পেমেন্ট']];
+
+  // Table data
+  const data = students.map(s => [
+    s.name,
+    s.roll,
+    s.batch,
+    `${s.classes}/12`,
+    s.paid ? 'হ্যা' : 'না'
+  ]);
+
+  // Use autoTable plugin
+  doc.autoTable({
+    startY: 25,
+    head: headers,
+    body: data,
+    styles: { font: 'helvetica', fontSize: 12 },
+    headStyles: { fillColor: [46, 125, 50], textColor: 255 },
+    alternateRowStyles: { fillColor: [240, 248, 233] }
+  });
+
+  doc.save('monthly_report.pdf');
+}
+// --------------------------------------
+
+// --------------------------------------------------------------------
 // Monthly report
 async function monthlyReport(){
   const { jsPDF } = window.jspdf;
@@ -238,6 +297,7 @@ async function monthlyReport(){
   doc.setFontSize(12);
   let y = 25;
   doc.text('নাম | রোল | ব্যাচ | ক্লাস | পেমেন্ট', 10, y);
+  
   y+=5;
   students.forEach(s=>{
     let text = `${s.name} | ${s.roll} | ${s.batch} | ${s.classes} | ${s.paid?'হ্যা':'না'}`;
@@ -246,7 +306,7 @@ async function monthlyReport(){
   });
   doc.save('monthly_report.pdf');
 }
-
+// -----------------------------------------------------------------------
 // Chart.js
 var ctxA = document.getElementById('chartA').getContext('2d');
 var ctxB = document.getElementById('chartB').getContext('2d');
@@ -291,6 +351,7 @@ function openModal(index){
     let div = document.createElement('div');
     div.innerHTML = `<span>${a.date}</span><span>${a.present ? '✔ উপস্থিত':'✖ অনুপস্থিত'}</span>`;
     let btn = document.createElement('button');
+    //  ✖️❌‼️ ✅☑️✔️
     btn.innerText = a.present ? 'X' : '✔';
     btn.onclick = ()=>{
       student.attendance[index].present = !student.attendance[index].present;
